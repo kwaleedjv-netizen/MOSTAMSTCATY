@@ -287,7 +287,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
       </div>
 
       <p dir="ltr" className="text-center text-[11px] text-slate-500 leading-relaxed select-text">
-        © Copyright Des by Khaldon Waleed
+        © Des by Khaldon Waleed
         <br />
         kwal33d
       </p>
