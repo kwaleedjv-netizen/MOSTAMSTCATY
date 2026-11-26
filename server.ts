@@ -17,10 +17,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 function getNormalizedClientIp(req: express.Request): string {
+  const cfIp = req.headers['cf-connecting-ip'];
   const xff = req.headers['x-forwarded-for'];
   let raw = '';
 
-  if (typeof xff === 'string' && xff.trim().length > 0) {
+  if (typeof cfIp === 'string' && cfIp.trim().length > 0) {
+    raw = cfIp.trim();
+  } else if (typeof xff === 'string' && xff.trim().length > 0) {
     raw = xff.split(',')[0].trim();
   } else if (Array.isArray(xff) && xff.length > 0) {
     raw = xff[0].split(',')[0].trim();

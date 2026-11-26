@@ -77,6 +77,10 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
     if (code === 'auth/operation-not-allowed') {
       return 'تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في Firebase Console. يمكنك استخدام زر Google أدناه.';
     }
+    if (code === 'auth/unauthorized-domain') {
+      const host = typeof window !== 'undefined' ? window.location.hostname : '';
+      return `النطاق (${host}) غير مضاف ضمن النطاقات المصرح بها (Authorized domains) في Firebase Console.`;
+    }
     if (code === 'auth/network-request-failed') {
       return 'تعذر الاتصال بالشبكة. تحقق من الإنترنت وأعد المحاولة.';
     }

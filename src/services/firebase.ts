@@ -202,6 +202,17 @@ export function clearLocalVerifiedIpCache(uid: string): void {
   localStorage.removeItem(getLocalVerifiedIpKey(uid));
 }
 
+async function computeClientIpHash(ip: string): Promise<string> {
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const data = new TextEncoder().encode(`mostamsakati_ip_v1:${ip}`);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  return ip;
+}
+
 export async function detectCurrentNetworkIp(): Promise<NetworkIpInfo> {
   if (!navigator.onLine) {
     return {
@@ -217,14 +228,37 @@ export async function detectCurrentNetworkIp(): Promise<NetworkIpInfo> {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
       const data = await res.json();
-      return {
-        ip: String(data.ip || 'unknown').slice(0, 64),
-        ipHash: sanitizeFirestoreId(String(data.ipHash || 'unknown_ip'), 'ip'),
-        detectedAt: String(data.detectedAt || new Date().toISOString()),
-        isOffline: false,
-      };
+      if (data && data.ip && data.ipHash) {
+        return {
+          ip: String(data.ip).slice(0, 64),
+          ipHash: sanitizeFirestoreId(String(data.ipHash), 'ip'),
+          detectedAt: String(data.detectedAt || new Date().toISOString()),
+          isOffline: false,
+        };
+      }
+    }
+  } catch {
+    // Try Cloudflare edge trace fallback below
+  }
+
+  try {
+    const traceRes = await fetch('/cdn-cgi/trace', { cache: 'no-store' });
+    if (traceRes.ok) {
+      const text = await traceRes.text();
+      const match = text.match(/^ip=([^\r\n]+)/m);
+      if (match && match[1]) {
+        const ip = match[1].trim().slice(0, 64);
+        const hash = await computeClientIpHash(ip);
+        return {
+          ip,
+          ipHash: sanitizeFirestoreId(hash, 'ip'),
+          detectedAt: new Date().toISOString(),
+          isOffline: false,
+        };
+      }
     }
   } catch {
     // Fallback below if network temporarily unreachable

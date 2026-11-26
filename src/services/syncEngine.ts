@@ -156,7 +156,8 @@ class SyncEngine {
   public async checkHealth(): Promise<{ online: boolean; info?: Record<string, unknown> }> {
     try {
       const res = await fetch('/api/health', { cache: 'no-store' });
-      if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const info = await res.json();
         return { online: true, info };
       }
