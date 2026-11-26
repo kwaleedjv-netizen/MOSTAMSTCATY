@@ -281,11 +281,23 @@ export async function signInWithGooglePopup(): Promise<User> {
   return result.user;
 }
 
+async function sendVerificationWithOriginFallback(user: User): Promise<void> {
+  try {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      await sendEmailVerification(user, { url: window.location.origin });
+      return;
+    }
+  } catch {
+    // Fall back to default Firebase verification link if custom origin is not yet authorized
+  }
+  await sendEmailVerification(user);
+}
+
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const result = await signInWithEmailAndPassword(auth, email.trim(), password);
   if (!result.user.emailVerified) {
     try {
-      await sendEmailVerification(result.user);
+      await sendVerificationWithOriginFallback(result.user);
     } catch {
       // Ignore rate-limit errors when resending verification link
     }
@@ -298,7 +310,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
 export async function registerWithEmail(email: string, password: string): Promise<void> {
   const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
   try {
-    await sendEmailVerification(result.user);
+    await sendVerificationWithOriginFallback(result.user);
   } finally {
     await signOut(auth);
   }

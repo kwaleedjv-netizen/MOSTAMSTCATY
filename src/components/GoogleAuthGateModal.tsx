@@ -81,6 +81,15 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
       const host = typeof window !== 'undefined' ? window.location.hostname : '';
       return `النطاق (${host}) غير مضاف ضمن النطاقات المصرح بها (Authorized domains) في Firebase Console.`;
     }
+    if (code === 'auth/too-many-requests') {
+      return 'تم إرسال طلبات كثيرة مؤقتاً. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.';
+    }
+    if (code === 'auth/user-disabled') {
+      return 'تم تعطيل هذا الحساب من قبل الإدارة.';
+    }
+    if (code === 'auth/account-exists-with-different-credential') {
+      return 'هذا البريد مسجل بطريقة دخول أخرى. استخدم زر Google أو البريد وكلمة المرور.';
+    }
     if (code === 'auth/network-request-failed') {
       return 'تعذر الاتصال بالشبكة. تحقق من الإنترنت وأعد المحاولة.';
     }

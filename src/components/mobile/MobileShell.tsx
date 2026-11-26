@@ -262,12 +262,13 @@ export const MobileShell: React.FC<MobileShellProps> = ({
 
   return (
     <div
-      className="flex h-[100dvh] w-screen bg-slate-50 text-slate-900 select-none overflow-hidden font-['Cairo',system-ui,sans-serif]"
+      className="flex min-h-[100dvh] w-full bg-slate-50 text-slate-900 select-none font-['Cairo',system-ui,sans-serif]"
+      style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       dir="rtl"
     >
       {/* Compact Landscape Right Rail (RTL start side) */}
       {useLandscapeRail && (
-        <aside className="w-[68px] bg-white border-l border-slate-200 flex flex-col items-center justify-between py-2 px-1 shrink-0 z-30">
+        <aside className="sticky top-0 h-[100dvh] self-start w-[68px] bg-white border-l border-slate-200 flex flex-col items-center justify-between py-2 px-1 shrink-0 z-30">
           <button
             type="button"
             onClick={() => setActivePage('vault')}
@@ -324,7 +325,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
       )}
 
       {/* Main Column */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-[100dvh]">
         {activePage === 'groups' ? (
           <MobileGroupsPage
             currentFilter={sidebarFilter}
@@ -383,7 +384,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
             {/* 1. Compact Sticky Top Bar (only when lock button is active) */}
             {hasMasterPassword && (
               <header
-                className={`bg-white border-b border-slate-200 px-3 flex items-center justify-end gap-2 shrink-0 z-20 ${
+                className={`sticky top-0 bg-white border-b border-slate-200 px-3 flex items-center justify-end gap-2 shrink-0 z-30 ${
                   useLandscapeRail ? 'min-h-[44px]' : 'min-h-[50px] pt-safe'
                 }`}
               >
@@ -402,7 +403,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
 
         {/* 2. Collapsible Search Input */}
         {(isSearchOpen || searchQuery.length > 0) && (
-          <div className="bg-white border-b border-slate-200 px-3 py-2 shrink-0">
+          <div className="sticky top-0 bg-white border-b border-slate-200 px-3 py-2 shrink-0 z-25">
             <div className="relative flex items-center">
               <Search className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" />
               <input
@@ -434,7 +435,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         {!useLandscapeRail && (
           <div
             ref={filterDropdownRef}
-            className="bg-white border-b border-slate-200/80 px-3 py-1.5 relative shrink-0 z-20"
+            className="sticky top-0 bg-white border-b border-slate-200/80 px-3 py-1.5 shrink-0 z-20"
           >
             {(() => {
               const quickFilters: { id: SidebarFilter; label: string; count: number; color?: string }[] = [
@@ -633,7 +634,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         )}
 
         {/* 5. Main Documents Content Canvas */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-3">
+        <main className="flex-1 p-3">
           {documents.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
               <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-3 border border-slate-200 shadow-xs">
@@ -698,7 +699,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         {!useLandscapeRail && (
           <nav
             aria-label="التنقل الرئيسي"
-            className="bg-white/95 backdrop-blur-md border-t border-slate-200 px-1.5 pb-safe shrink-0 z-30"
+            className="sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1.5 pb-safe shrink-0 z-30"
           >
             <div className="h-[60px] flex items-center justify-around gap-0.5">
               <button

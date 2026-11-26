@@ -182,15 +182,7 @@ function AppContent() {
         await syncEngine.syncNow();
       }
 
-      const existingDocs = await dbGetAll<MostamsakDocument>('documents');
-      const existingGrps = await dbGetAll<DocumentGroup>('groups');
-
-      if (existingDocs.length === 0 && existingGrps.length === 0) {
-        await initializeDatabase();
-        if (navigator.onLine) {
-          await syncEngine.syncNow();
-        }
-      }
+      await initializeDatabase();
 
       const loadedSettings = await loadSettings();
       setSettings({ ...loadedSettings, theme: 'light' });

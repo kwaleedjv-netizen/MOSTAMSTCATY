@@ -566,8 +566,8 @@ export const MobileGroupsPage: React.FC<MobileGroupsPageProps> = ({
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-slate-50 overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] space-y-5 text-xs">
+    <div className="flex-1 flex flex-col bg-slate-50">
+      <div className="flex-1 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] space-y-5 text-xs">
         {/* Custom Groups (2-column unlimited grid) */}
         <section className="space-y-2">
           {groups.length === 0 ? (
@@ -768,12 +768,12 @@ export const MobileQuickAddPage: React.FC<MobileQuickAddPageProps> = ({
   onNewGroup,
 }) => {
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-slate-50 overflow-hidden">
-      <header className="min-h-[50px] pt-safe px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
+    <div className="flex-1 flex flex-col bg-slate-50">
+      <header className="sticky top-0 z-20 min-h-[50px] pt-safe px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
         <h1 className="font-bold text-sm text-slate-900">إضافة وإنشاء جديد</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+      <div className="flex-1 p-4 space-y-3 text-xs">
         <button
           type="button"
           onClick={onNewDocument}
@@ -919,12 +919,12 @@ export const MobileToolsHubPage: React.FC<MobileToolsHubPageProps> = ({
     'w-full min-h-[48px] px-3.5 py-2 flex items-center justify-between gap-3 text-right text-xs font-semibold text-slate-800 active:bg-slate-100 cursor-pointer';
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-slate-50 overflow-hidden">
-      <header className="min-h-[50px] pt-safe px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
+    <div className="flex-1 flex flex-col bg-slate-50">
+      <header className="sticky top-0 z-20 min-h-[50px] pt-safe px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
         <h1 className="font-bold text-sm text-slate-900">الأدوات والإعدادات الشاملة</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs">
+      <div className="flex-1 p-4 space-y-5 text-xs">
         {/* Google Account & IP Card */}
         {userEmail && (
           <section className="bg-white border border-slate-200 rounded-2xl p-3.5 space-y-2.5">

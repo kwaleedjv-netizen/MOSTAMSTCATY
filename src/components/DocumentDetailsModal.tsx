@@ -10,6 +10,9 @@ import {
   Check,
   FlipHorizontal,
   Shield,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react';
 import { MostamsakDocument, DocumentGroup } from '../types';
 import { useLayoutMode } from '../hooks/useViewportMode';
@@ -43,14 +46,39 @@ export const DocumentDetailsModal: React.FC<DocumentDetailsModalProps> = ({
   const [titleDraft, setTitleDraft] = useState(doc.title);
   const [notesDraft, setNotesDraft] = useState(doc.notes || '');
   const [savedNotice, setSavedNotice] = useState(false);
+  const [mobileZoom, setMobileZoom] = useState(1);
+  const pinchRef = React.useRef<{ startDist: number; startZoom: number } | null>(null);
   const { isMobile } = useLayoutMode();
 
   useEffect(() => {
     setTitleDraft(doc.title);
     setNotesDraft(doc.notes || '');
     setIsEditingTitle(false);
+    setMobileZoom(1);
     setFaceMode(doc.sidesCount === 2 && doc.backImage ? 'both' : 'front');
   }, [doc]);
+
+  const handleTouchStartZoom = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchRef.current = { startDist: Math.hypot(dx, dy), startZoom: mobileZoom };
+    }
+  };
+
+  const handleTouchMoveZoom = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchRef.current && pinchRef.current.startDist > 0) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const next = Math.min(3.5, Math.max(1, Number((pinchRef.current.startZoom * (dist / pinchRef.current.startDist)).toFixed(2))));
+      setMobileZoom(next);
+    }
+  };
+
+  const handleTouchEndZoom = () => {
+    pinchRef.current = null;
+  };
 
   if (!isOpen) return null;
 
@@ -124,7 +152,8 @@ export const DocumentDetailsModal: React.FC<DocumentDetailsModalProps> = ({
   if (isMobile) {
     return (
       <div
-        className="fixed inset-0 z-50 bg-white flex flex-col h-[100dvh] w-screen select-none overflow-hidden"
+        className="fixed inset-0 z-50 bg-white flex flex-col h-[100dvh] w-screen select-none"
+        style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
         dir="rtl"
       >
         {/* Mobile Header */}
@@ -192,45 +221,114 @@ export const DocumentDetailsModal: React.FC<DocumentDetailsModalProps> = ({
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50" style={{ touchAction: 'pan-x pan-y pinch-zoom' }}>
           {/* Preview Stage */}
           <div className="studio-stage-grid p-4 flex flex-col items-center gap-3 border-b border-slate-200">
-            {hasBack && (
+            <div className="w-full max-w-md flex items-center justify-between gap-2">
+              {hasBack ? (
+                <div className="flex items-center bg-white p-0.5 rounded-xl border border-slate-200 shadow-2xs">
+                  {[
+                    { id: 'front' as const, label: 'الأمامي' },
+                    { id: 'back' as const, label: 'الخلفي' },
+                    { id: 'both' as const, label: 'كلا الوجهين' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setFaceMode(tab.id)}
+                      className={`min-h-[34px] px-2.5 rounded-lg text-xs font-bold cursor-pointer ${
+                        faceMode === tab.id ? 'bg-slate-900 text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div />
+              )}
+
               <div className="flex items-center bg-white p-0.5 rounded-xl border border-slate-200 shadow-2xs">
-                {[
-                  { id: 'front' as const, label: 'الأمامي' },
-                  { id: 'back' as const, label: 'الخلفي' },
-                  { id: 'both' as const, label: 'كلا الوجهين' },
-                ].map((tab) => (
+                <button
+                  type="button"
+                  onClick={() => setMobileZoom((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
+                  aria-label="تصغير"
+                  className="min-w-[34px] min-h-[34px] rounded-lg flex items-center justify-center text-slate-700 active:bg-slate-100 cursor-pointer"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="px-1.5 text-[11px] font-mono tabular-nums text-slate-700">
+                  {Math.round(mobileZoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setMobileZoom((z) => Math.min(3.5, Number((z + 0.5).toFixed(2))))}
+                  aria-label="تكبير"
+                  className="min-w-[34px] min-h-[34px] rounded-lg flex items-center justify-center text-slate-700 active:bg-slate-100 cursor-pointer"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                {mobileZoom > 1 && (
                   <button
-                    key={tab.id}
                     type="button"
-                    onClick={() => setFaceMode(tab.id)}
-                    className={`min-h-[34px] px-3 rounded-lg text-xs font-bold cursor-pointer ${
-                      faceMode === tab.id ? 'bg-slate-900 text-white' : 'text-slate-600'
-                    }`}
+                    onClick={() => setMobileZoom(1)}
+                    aria-label="إعادة ضبط التكبير"
+                    className="min-w-[34px] min-h-[34px] rounded-lg flex items-center justify-center text-blue-600 active:bg-blue-50 cursor-pointer"
                   >
-                    {tab.label}
+                    <RotateCcw className="w-3.5 h-3.5" />
                   </button>
-                ))}
+                )}
               </div>
-            )}
+            </div>
 
             {faceMode === 'both' && hasBack && doc.backImage ? (
-              <div className="grid grid-cols-1 gap-3 w-full max-w-md">
-                <div className="bg-white border border-slate-300 rounded-2xl p-2 shadow-sm flex items-center justify-center">
-                  <img src={doc.frontImage} alt={doc.title} className="max-h-52 w-auto object-contain" />
+              <div
+                className="grid grid-cols-1 gap-3 w-full max-w-md rounded-2xl"
+                onTouchStart={handleTouchStartZoom}
+                onTouchMove={handleTouchMoveZoom}
+                onTouchEnd={handleTouchEndZoom}
+                onDoubleClick={() => setMobileZoom((z) => (z > 1 ? 1 : 2))}
+              >
+                <div
+                  className={`bg-white border border-slate-300 rounded-2xl p-2 shadow-sm overflow-auto ${
+                    mobileZoom > 1 ? 'block max-h-80' : 'flex items-center justify-center'
+                  }`}
+                >
+                  <img
+                    src={doc.frontImage}
+                    alt={doc.title}
+                    style={mobileZoom > 1 ? { width: `${mobileZoom * 100}%`, maxWidth: 'none' } : undefined}
+                    className={mobileZoom > 1 ? 'object-contain' : 'max-h-52 max-w-full w-auto object-contain'}
+                  />
                 </div>
-                <div className="bg-white border border-slate-300 rounded-2xl p-2 shadow-sm flex items-center justify-center">
-                  <img src={doc.backImage} alt={doc.title} className="max-h-52 w-auto object-contain" />
+                <div
+                  className={`bg-white border border-slate-300 rounded-2xl p-2 shadow-sm overflow-auto ${
+                    mobileZoom > 1 ? 'block max-h-80' : 'flex items-center justify-center'
+                  }`}
+                >
+                  <img
+                    src={doc.backImage}
+                    alt={doc.title}
+                    style={mobileZoom > 1 ? { width: `${mobileZoom * 100}%`, maxWidth: 'none' } : undefined}
+                    className={mobileZoom > 1 ? 'object-contain' : 'max-h-52 max-w-full w-auto object-contain'}
+                  />
                 </div>
               </div>
             ) : (
-              <div className="bg-white border border-slate-300 rounded-2xl p-2 shadow-sm flex items-center justify-center w-full max-w-md">
+              <div
+                className={`bg-white border border-slate-300 rounded-2xl p-2 shadow-sm w-full max-w-md overflow-auto ${
+                  mobileZoom > 1 ? 'block max-h-96' : 'flex items-center justify-center'
+                }`}
+                onTouchStart={handleTouchStartZoom}
+                onTouchMove={handleTouchMoveZoom}
+                onTouchEnd={handleTouchEndZoom}
+                onDoubleClick={() => setMobileZoom((z) => (z > 1 ? 1 : 2))}
+              >
                 <img
                   src={faceMode === 'back' && doc.backImage ? doc.backImage : doc.frontImage}
                   alt={doc.title}
-                  className="max-h-60 max-w-full w-auto object-contain"
+                  style={mobileZoom > 1 ? { width: `${mobileZoom * 100}%`, maxWidth: 'none' } : undefined}
+                  className={mobileZoom > 1 ? 'object-contain' : 'max-h-60 max-w-full w-auto object-contain'}
                 />
               </div>
             )}
