@@ -640,12 +640,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
               <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-3 border border-slate-200 shadow-xs">
                 <FilePlus className="w-7 h-7 text-blue-600" />
               </div>
-              <h2 className="font-bold text-sm text-slate-800 mb-1">لا توجد مستمسكات للعرض</h2>
-              <p className="text-xs text-slate-500 max-w-xs mb-5 leading-relaxed">
-                {searchQuery || typeFilter !== 'all'
-                  ? 'لا توجد نتائج تطابق البحث أو نوع المستمسك المحدد.'
-                  : 'أضف بطاقة هوية، جواز سفر، بطاقة سكن أو أي وثيقة رسمية بالقياس الحقيقي 1:1.'}
-              </p>
+              <h2 className="font-bold text-sm text-slate-800 mb-4">لا توجد مستمسكات للعرض</h2>
               <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
                 <button
                   type="button"

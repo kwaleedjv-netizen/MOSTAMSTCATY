@@ -925,16 +925,13 @@ export const MobileToolsHubPage: React.FC<MobileToolsHubPageProps> = ({
       </header>
 
       <div className="flex-1 p-4 space-y-5 text-xs">
-        {/* Google Account & IP Card */}
+        {/* Account Card */}
         {userEmail && (
           <section className="bg-white border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-bold text-slate-900">حساب Google المتصل</div>
+                <div className="font-bold text-slate-900">الحساب المتصل</div>
                 <div className="text-[11px] font-mono text-blue-700 truncate mt-0.5">{userEmail}</div>
-                {currentIp && (
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">IP: {currentIp}</div>
-                )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -942,7 +939,7 @@ export const MobileToolsHubPage: React.FC<MobileToolsHubPageProps> = ({
                   onClick={() => onOpenSettingsTab('cloud')}
                   className="min-h-[36px] px-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-bold cursor-pointer"
                 >
-                  الأجهزة والـ IP
+                  الحساب
                 </button>
                 {onSignOutGoogle && (
                   <button
@@ -1100,7 +1097,7 @@ export const MobileToolsHubPage: React.FC<MobileToolsHubPageProps> = ({
               { id: 'images' as const, label: 'الصور والطباعة', icon: ImageIcon },
               { id: 'storage' as const, label: 'التخزين', icon: Database },
               { id: 'security' as const, label: 'الأمان والتشفير', icon: Shield },
-              { id: 'cloud' as const, label: 'المزامنة السحابية', icon: Cloud },
+              { id: 'cloud' as const, label: 'الحساب', icon: Cloud },
               { id: 'reset' as const, label: 'ضبط المصنع', icon: AlertTriangle, danger: true },
             ].map((tab) => {
               const Icon = tab.icon;

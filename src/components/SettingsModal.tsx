@@ -10,12 +10,8 @@ import {
   AlertTriangle,
   Check,
   RefreshCw,
-  Globe,
-  Laptop,
+  User as UserIcon,
   LogOut,
-  Trash2,
-  ShieldCheck,
-  Ban,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { AppSettings } from '../types';
@@ -65,14 +61,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onFactoryResetWipeAll,
   initialTab = 'ui',
   firebaseUser,
-  currentIpInfo,
-  requireEmailOnNewIp,
-  trustedIps,
-  userDevices,
-  onToggleRequireEmailOnNewIp,
-  onRevokeTrustedIp,
-  onRemoveTrustedIp,
-  onRemoveUserDevice,
   onSwitchGoogleAccount,
   onSignOutGoogle,
 }) => {
@@ -227,7 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 { id: 'images' as const, label: 'الصور والطباعة', icon: Image },
                 { id: 'storage' as const, label: 'التخزين', icon: Database },
                 { id: 'security' as const, label: 'الأمان', icon: Shield },
-                { id: 'cloud' as const, label: 'المزامنة', icon: Cloud },
+                { id: 'cloud' as const, label: 'الحساب', icon: UserIcon },
                 { id: 'reset' as const, label: 'ضبط المصنع', icon: AlertTriangle, danger: true },
               ].map((t) => {
                 const Icon = t.icon;
@@ -301,8 +289,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   currentTab === 'cloud' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Cloud className="w-3.5 h-3.5" />
-                <span>المزامنة السحابية</span>
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>الحساب</span>
               </button>
 
               <div className="h-[1px] bg-slate-200 my-2" />
@@ -590,32 +578,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             )}
 
-            {/* 5. CLOUD SYNC, GOOGLE ACCOUNT & IP PROTECTION */}
+            {/* 5. ACCOUNT */}
             {currentTab === 'cloud' && (
               <div className="space-y-4">
                 <div className="font-bold text-sm text-slate-800 border-b border-slate-200 pb-2">
-                  حساب Google، المزامنة السحابية، وحماية الـ IP والأجهزة المتعددة
+                  حساب المستخدم
                 </div>
 
-                {/* Google Account Card */}
-                {firebaseUser && (
+                {/* Account Card */}
+                {firebaseUser ? (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       {firebaseUser.photoURL ? (
                         <img
                           src={firebaseUser.photoURL}
-                          alt={firebaseUser.displayName || 'Google'}
+                          alt={firebaseUser.displayName || 'الحساب'}
                           className="w-10 h-10 rounded-full border border-slate-300 shrink-0"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                          {(firebaseUser.email || 'G')[0].toUpperCase()}
+                          {(firebaseUser.email || 'U')[0].toUpperCase()}
                         </div>
                       )}
                       <div className="min-w-0">
                         <div className="font-bold text-slate-900 truncate">
-                          {firebaseUser.displayName || 'حساب Google موثق'}
+                          {firebaseUser.displayName || 'حساب موثق'}
                         </div>
                         <div className="text-[11px] font-mono text-blue-700 truncate">
                           {firebaseUser.email}
@@ -644,195 +632,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </button>
                     </div>
                   </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center text-slate-500">
+                    لا يوجد حساب مسجل حالياً.
+                  </div>
                 )}
-
-                {/* New IP & Multi-Device Guard Setting */}
-                <div className="bg-blue-50/70 border border-blue-200 rounded-lg p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="font-bold text-slate-800">عنوان IP الحالي:</span>
-                      <span className="font-mono font-bold text-blue-800 bg-white border border-blue-200 px-2 py-0.5 rounded">
-                        {currentIpInfo?.ip || 'غير معروف'}
-                      </span>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                      <ShieldCheck className="w-3 h-3" />
-                      <span>موثوق</span>
-                    </span>
-                  </div>
-
-                  <label className="flex items-start gap-2 cursor-pointer pt-1">
-                    <input
-                      type="checkbox"
-                      checked={requireEmailOnNewIp}
-                      onChange={(e) => void onToggleRequireEmailOnNewIp(e.target.checked)}
-                      className="rounded accent-blue-600 mt-0.5"
-                    />
-                    <span className="text-slate-700 leading-relaxed">
-                      طلب تسجيل الدخول وتأكيد إيميل Google تلقائياً عند اكتشاف أي عنوان IP جديد أو جهاز متعدد
-                    </span>
-                  </label>
-                </div>
-
-                {/* Trusted IP Addresses */}
-                <div className="bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">عناوين الشبكة (IPs) المسجلة ({trustedIps.length})</span>
-                    <span className="text-[10px] text-slate-500">إلغاء الثقة يجبر الجهاز على إدخال الإيميل فوراً</span>
-                  </div>
-
-                  {trustedIps.length === 0 ? (
-                    <div className="text-[11px] text-slate-400 py-2">لا توجد عناوين مسجلة بعد.</div>
-                  ) : (
-                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-md overflow-hidden">
-                      {trustedIps.map((item) => {
-                        const isCurrentIp = currentIpInfo?.ipHash === item.ipHash;
-                        return (
-                          <div key={item.ipHash} className="p-2.5 flex flex-wrap items-center justify-between gap-2 bg-white">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-mono font-bold text-slate-900">{item.ipLabel}</span>
-                                {isCurrentIp && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                                    الحالي
-                                  </span>
-                                )}
-                                <span
-                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                                    item.trusted
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                      : 'bg-red-50 text-red-700 border-red-200'
-                                  }`}
-                                >
-                                  {item.trusted ? 'موثوق' : 'ملغى / محظور'}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                                {item.deviceName} · {item.verifiedEmail}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {item.trusted && (
-                                <button
-                                  type="button"
-                                  onClick={() => void onRevokeTrustedIp(item.ipHash)}
-                                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                                  title="إلغاء ثقة هذا الـ IP لإجبار إعادة تسجيل الدخول"
-                                >
-                                  <Ban className="w-3 h-3" />
-                                  <span>إلغاء الثقة</span>
-                                </button>
-                              )}
-                              {!isCurrentIp && (
-                                <button
-                                  type="button"
-                                  onClick={() => void onRemoveTrustedIp(item.ipHash)}
-                                  className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded cursor-pointer"
-                                  title="حذف السجل"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Multi-Device Registry */}
-                <div className="bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">الأجهزة المرتبطة بالحساب ({userDevices.length})</span>
-                    <span className="text-[10px] text-slate-500">مزامنة متعددة الأجهزة عبر السحابة</span>
-                  </div>
-
-                  {userDevices.length === 0 ? (
-                    <div className="text-[11px] text-slate-400 py-2">لا توجد أجهزة مسجلة بعد.</div>
-                  ) : (
-                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-md overflow-hidden">
-                      {userDevices.map((dev) => {
-                        const isThisDevice = dev.id === localSettings.cloudDeviceId;
-                        return (
-                          <div key={dev.id} className="p-2.5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <Laptop className="w-4 h-4 text-slate-500 shrink-0" />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-slate-900 truncate">{dev.name}</span>
-                                  {isThisDevice && (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                                      هذا الجهاز
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-500 truncate">
-                                  {dev.platform} · آخر IP: <span className="font-mono">{dev.lastIpLabel}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {!isThisDevice && (
-                              <button
-                                type="button"
-                                onClick={() => void onRemoveUserDevice(dev.id)}
-                                className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded text-[11px] font-semibold cursor-pointer shrink-0"
-                              >
-                                إزالة الجهاز
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Device Config */}
-                <div className="space-y-3 pt-1">
-                  <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-3'}`}>
-                    <div>
-                      <label className="text-slate-700 block mb-1">اسم هذا الجهاز</label>
-                      <input
-                        type="text"
-                        value={localSettings.cloudDeviceName}
-                        onChange={(e) => setLocalSettings({ ...localSettings, cloudDeviceName: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded px-3 py-1.5 text-slate-800"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-slate-700 block mb-1">معرف الجهاز (Device ID)</label>
-                      <input
-                        type="text"
-                        readOnly
-                        value={localSettings.cloudDeviceId}
-                        className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-1.5 text-slate-500 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={localSettings.autoSyncOnStart}
-                      onChange={(e) => setLocalSettings({ ...localSettings, autoSyncOnStart: e.target.checked })}
-                      className="rounded accent-blue-600"
-                    />
-                    <span className="text-slate-700">المزامنة التلقائية عبر السحابة عند التشغيل وعند عودة الإنترنت</span>
-                  </label>
-                </div>
-
-                <div className="pt-3 border-t border-slate-200 flex justify-end">
-                  <button
-                    onClick={handleSaveGeneral}
-                    className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold cursor-pointer shadow-xs"
-                  >
-                    حفظ إعدادات الجهاز والسحابة
-                  </button>
-                </div>
               </div>
             )}
 

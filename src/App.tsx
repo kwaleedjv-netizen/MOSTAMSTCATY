@@ -150,12 +150,39 @@ function AppContent() {
     menu: ContextMenuType;
   } | null>(null);
 
-  // Refresh data from IndexedDB
+  // Refresh data silently from IndexedDB (used locally and after background cloud syncs)
   const reloadData = useCallback(async () => {
     const docs = await dbGetAll<MostamsakDocument>('documents');
     const grps = await dbGetAll<DocumentGroup>('groups');
     setDocuments(docs);
     setGroups(grps);
+
+    setInspectDoc((prev) => {
+      if (!prev) return null;
+      const fresh = docs.find((d) => d.id === prev.id);
+      if (!fresh || fresh.isDeleted) return null;
+      return fresh;
+    });
+
+    setSelectedDocIds((prev) => {
+      if (prev.size === 0) return prev;
+      const validIds = new Set(docs.map((d) => d.id));
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+
+    setSidebarFilter((prev) => {
+      if (prev.startsWith('group_')) {
+        const gId = prev.replace('group_', '');
+        if (!grps.some((g) => g.id === gId)) return 'all';
+      }
+      return prev;
+    });
 
     const storage = await calculateStorageUsage();
     setStorageUsedBytes(storage.usedBytes);
@@ -179,7 +206,7 @@ function AppContent() {
       syncEngine.setAccessContext(uid, true);
 
       if (navigator.onLine) {
-        await syncEngine.syncNow();
+        await syncEngine.syncNow({ silent: true });
       }
 
       await initializeDatabase();
@@ -268,14 +295,16 @@ function AppContent() {
 
     const unsubscribeSync = syncEngine.subscribe((status) => {
       setSyncStatus(status);
-      if (status.state === 'synced') {
-        void reloadData();
-      }
+    });
+
+    const unsubscribeData = syncEngine.subscribeDataChange(() => {
+      void reloadData();
     });
 
     return () => {
       unsubscribeAuth();
       unsubscribeSync();
+      unsubscribeData();
     };
   }, [reloadData, verifyUserAndIpAccess]);
 
@@ -323,7 +352,11 @@ function AppContent() {
         setDocuments([]);
         setGroups([]);
         setIpGateReason(verdict.reason || 'ip_changed');
+        return;
       }
+
+      // Silently catch up in background after tab/device wake
+      void syncEngine.syncNow({ silent: true });
     };
 
     const handleOnline = () => void checkForIpShift();
@@ -749,10 +782,16 @@ function AppContent() {
 
   // Group Handlers
   const handleSaveGroup = async (group: DocumentGroup) => {
-    await dbPut('groups', group);
-    await recordAudit('group_create', group.name, 'تم حفظ المجموعة وتحديثها');
+    const now = new Date().toISOString();
+    const stampedGroup: DocumentGroup = {
+      ...group,
+      createdAt: group.createdAt || now,
+      updatedAt: now,
+    };
+    await dbPut('groups', stampedGroup);
+    await recordAudit('group_create', stampedGroup.name, 'تم حفظ المجموعة وتحديثها');
     await reloadData();
-    void syncEngine.pushGroupNow(group);
+    void syncEngine.pushGroupNow(stampedGroup);
   };
 
   const handleDeleteGroup = async (groupId: string, targetGroupId?: string) => {
@@ -1529,7 +1568,10 @@ function AppContent() {
         <BackupRestoreModal
           isOpen={isBackupOpen}
           onClose={() => setIsBackupOpen(false)}
-          onDataRestored={reloadData}
+          onDataRestored={async () => {
+            await reloadData();
+            void syncEngine.syncNow({ silent: true });
+          }}
         />
       )}
 

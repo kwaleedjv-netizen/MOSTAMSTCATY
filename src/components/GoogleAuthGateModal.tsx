@@ -52,6 +52,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
   const [password, setPassword] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [infoText, setInfoText] = useState<string | null>(null);
 
   const mapAuthError = (err: unknown): string => {
@@ -99,6 +100,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText(null);
+    setErrorCode(null);
     setInfoText(null);
 
     if (!email.trim() || !password) {
@@ -115,6 +117,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
         setPassword('');
       }
     } catch (err: unknown) {
+      setErrorCode((err as { code?: string })?.code || null);
       setErrorText(mapAuthError(err));
     } finally {
       setIsBusy(false);
@@ -123,11 +126,13 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
 
   const handleGoogleClick = async () => {
     setErrorText(null);
+    setErrorCode(null);
     setInfoText(null);
     setIsBusy(true);
     try {
       await onAuthenticateWithGoogle();
     } catch (err: unknown) {
+      setErrorCode((err as { code?: string })?.code || null);
       setErrorText(mapAuthError(err));
     } finally {
       setIsBusy(false);
@@ -152,7 +157,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[200] bg-slate-100 flex items-center justify-center p-4 font-['Cairo',system-ui,sans-serif]"
+      className="fixed inset-0 z-[200] bg-slate-100 flex flex-col items-center justify-center gap-4 p-4 overflow-y-auto font-['Cairo',system-ui,sans-serif]"
       dir="rtl"
     >
       <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-lg p-6 space-y-5 text-right">
@@ -199,9 +204,21 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
           </div>
 
           {errorText && (
-            <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-[11px] flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorText}</span>
+            <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-[11px] space-y-1.5">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorText}</span>
+              </div>
+              {errorCode === 'auth/operation-not-allowed' && (
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={handleGoogleClick}
+                  className="text-blue-700 hover:text-blue-800 font-bold underline underline-offset-2 cursor-pointer block mr-6"
+                >
+                  المتابعة الآن عبر حساب Google
+                </button>
+              )}
             </div>
           )}
 
@@ -248,6 +265,7 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
             onClick={() => {
               setAuthMode((m) => (m === 'signin' ? 'register' : 'signin'));
               setErrorText(null);
+              setErrorCode(null);
               setInfoText(null);
             }}
             className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
@@ -267,6 +285,12 @@ export const GoogleAuthGateModal: React.FC<GoogleAuthGateModalProps> = ({
           )}
         </div>
       </div>
+
+      <p dir="ltr" className="text-center text-[11px] text-slate-500 leading-relaxed select-text">
+        © Copyright Des by Khaldon Waleed
+        <br />
+        kwal33d
+      </p>
     </div>
   );
 };
