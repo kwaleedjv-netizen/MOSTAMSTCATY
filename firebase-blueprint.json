@@ -1,0 +1,551 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Private Google-authenticated vault owner profile and IP verification settings.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 200
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "requireEmailOnNewIp": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "requireEmailOnNewIp", "createdAt", "updatedAt"]
+    },
+    "TrustedIp": {
+      "title": "Trusted IP Address",
+      "description": "Verified IP address allowed to access the user's cloud vault after Google authentication.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ipHash": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ipLabel": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "userAgent": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "verifiedEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 200
+        },
+        "trusted": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "ipHash",
+        "ipLabel",
+        "deviceId",
+        "deviceName",
+        "userAgent",
+        "verifiedEmail",
+        "trusted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserDevice": {
+      "title": "User Device",
+      "description": "Registered browser or mobile device linked to the Google account.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "platform": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "lastIpLabel": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "lastIpHash": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerUid", "id", "name", "platform", "lastIpLabel", "lastIpHash", "createdAt", "updatedAt"]
+    },
+    "DocumentGroupEntity": {
+      "title": "Document Group",
+      "description": "Category folder organizing documents in the user's vault.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "isLocked": {
+          "type": "boolean"
+        },
+        "passwordHash": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "passwordSalt": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "isHidden": {
+          "type": "boolean"
+        },
+        "clientCreatedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "clientUpdatedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "id",
+        "name",
+        "color",
+        "icon",
+        "isLocked",
+        "clientCreatedAt",
+        "clientUpdatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VaultDocument": {
+      "title": "Vault Document",
+      "description": "Official document metadata, physical dimensions, and image transform state.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "typeId": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "typeName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "isCustom": {
+          "type": "boolean"
+        },
+        "widthMm": {
+          "type": "number"
+        },
+        "heightMm": {
+          "type": "number"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["landscape", "portrait"]
+        },
+        "sidesCount": {
+          "type": "number"
+        },
+        "frontLabel": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "backLabel": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "radiusMm": {
+          "type": "number"
+        },
+        "previewBgColor": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "frontTransform": {
+          "type": "object"
+        },
+        "backTransform": {
+          "type": "object"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "groupId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "isFavorite": {
+          "type": "boolean"
+        },
+        "isArchived": {
+          "type": "boolean"
+        },
+        "isDeleted": {
+          "type": "boolean"
+        },
+        "deletedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "previousGroupId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "isEncrypted": {
+          "type": "boolean"
+        },
+        "coverFace": {
+          "type": "string",
+          "enum": ["front", "back"]
+        },
+        "lastModifiedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "hasFrontImage": {
+          "type": "boolean"
+        },
+        "hasBackImage": {
+          "type": "boolean"
+        },
+        "hasOriginalFrontImage": {
+          "type": "boolean"
+        },
+        "hasOriginalBackImage": {
+          "type": "boolean"
+        },
+        "clientCreatedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "clientUpdatedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "id",
+        "title",
+        "typeId",
+        "typeName",
+        "isCustom",
+        "widthMm",
+        "heightMm",
+        "orientation",
+        "sidesCount",
+        "frontLabel",
+        "backLabel",
+        "radiusMm",
+        "frontTransform",
+        "backTransform",
+        "notes",
+        "isFavorite",
+        "isArchived",
+        "isDeleted",
+        "isEncrypted",
+        "coverFace",
+        "hasFrontImage",
+        "hasBackImage",
+        "hasOriginalFrontImage",
+        "hasOriginalBackImage",
+        "clientCreatedAt",
+        "clientUpdatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AssetChunk": {
+      "title": "Document Image Asset Chunk",
+      "description": "Chunked base64/data-URL image storage keeping each Firestore document under 1MB.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "docId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "slot": {
+          "type": "string",
+          "enum": ["front", "back", "originalFront", "originalBack"]
+        },
+        "index": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "data": {
+          "type": "string",
+          "maxLength": 600000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerUid", "docId", "slot", "index", "total", "data", "createdAt", "updatedAt"]
+    },
+    "CloudBackup": {
+      "title": "Cloud Encrypted Backup Metadata",
+      "description": "Metadata for an encrypted cloud backup archive belonging to the user.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "sizeBytes": {
+          "type": "number"
+        },
+        "documentsCount": {
+          "type": "number"
+        },
+        "groupsCount": {
+          "type": "number"
+        },
+        "chunkCount": {
+          "type": "number"
+        },
+        "clientCreatedAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "id",
+        "name",
+        "sizeBytes",
+        "documentsCount",
+        "groupsCount",
+        "chunkCount",
+        "clientCreatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BackupChunk": {
+      "title": "Cloud Backup Payload Chunk",
+      "description": "Chunked encrypted backup archive payload.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "backupId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "index": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "data": {
+          "type": "string",
+          "maxLength": 600000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerUid", "backupId", "index", "total", "data", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner profile and Google account metadata, readable and writable strictly by the owner."
+    },
+    "/users/{userId}/trustedIps/{ipHash}": {
+      "schema": { "$ref": "#/entities/TrustedIp" },
+      "description": "Verified IP hashes for detecting new IPs and enforcing Google login."
+    },
+    "/users/{userId}/devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/UserDevice" },
+      "description": "Multi-device registry for the signed-in Google account."
+    },
+    "/users/{userId}/groups/{groupId}": {
+      "schema": { "$ref": "#/entities/DocumentGroupEntity" },
+      "description": "Document groups synced to Firestore."
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": { "$ref": "#/entities/VaultDocument" },
+      "description": "Vault documents metadata synced across devices."
+    },
+    "/users/{userId}/assetChunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/AssetChunk" },
+      "description": "Chunked image payloads for vault documents."
+    },
+    "/users/{userId}/backups/{backupId}": {
+      "schema": { "$ref": "#/entities/CloudBackup" },
+      "description": "Encrypted cloud backup metadata."
+    },
+    "/users/{userId}/backupChunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/BackupChunk" },
+      "description": "Chunked encrypted backup payloads."
+    }
+  }
+}

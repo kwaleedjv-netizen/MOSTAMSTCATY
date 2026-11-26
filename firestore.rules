@@ -1,0 +1,392 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // === Global Primitives ===
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function userExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    // === Entity Validation Blueprints (Pillar 2) ===
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'requireEmailOnNewIp', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'requireEmailOnNewIp', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+        && data.displayName is string && data.displayName.size() <= 120
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && data.requireEmailOnNewIp is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTrustedIp(data) {
+      return data.keys().hasAll([
+          'ownerUid', 'ipHash', 'ipLabel', 'deviceId', 'deviceName',
+          'userAgent', 'verifiedEmail', 'trusted', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'ipHash', 'ipLabel', 'deviceId', 'deviceName',
+          'userAgent', 'verifiedEmail', 'trusted', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.ipHash)
+        && data.ipLabel is string && data.ipLabel.size() >= 1 && data.ipLabel.size() <= 64
+        && isValidId(data.deviceId)
+        && data.deviceName is string && data.deviceName.size() <= 120
+        && data.userAgent is string && data.userAgent.size() <= 240
+        && data.verifiedEmail is string && data.verifiedEmail.size() >= 3 && data.verifiedEmail.size() <= 200
+        && data.trusted is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserDevice(data) {
+      return data.keys().hasAll(['ownerUid', 'id', 'name', 'platform', 'lastIpLabel', 'lastIpHash', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'id', 'name', 'platform', 'lastIpLabel', 'lastIpHash', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.platform is string && data.platform.size() >= 1 && data.platform.size() <= 60
+        && data.lastIpLabel is string && data.lastIpLabel.size() >= 1 && data.lastIpLabel.size() <= 64
+        && isValidId(data.lastIpHash)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDocumentGroup(data) {
+      return data.keys().hasAll(['ownerUid', 'id', 'name', 'color', 'icon', 'isLocked', 'clientCreatedAt', 'clientUpdatedAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'ownerUid', 'id', 'name', 'color', 'icon', 'description',
+          'isLocked', 'passwordHash', 'passwordSalt', 'isHidden',
+          'clientCreatedAt', 'clientUpdatedAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.color is string && data.color.size() >= 1 && data.color.size() <= 32
+        && data.icon is string && data.icon.size() >= 1 && data.icon.size() <= 64
+        && (!('description' in data) || (data.description is string && data.description.size() <= 500))
+        && data.isLocked is bool
+        && (!('passwordHash' in data) || (data.passwordHash is string && data.passwordHash.size() <= 256))
+        && (!('passwordSalt' in data) || (data.passwordSalt is string && data.passwordSalt.size() <= 128))
+        && (!('isHidden' in data) || data.isHidden is bool)
+        && data.clientCreatedAt is string && data.clientCreatedAt.size() <= 64
+        && data.clientUpdatedAt is string && data.clientUpdatedAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVaultDocument(data) {
+      return data.keys().hasAll([
+          'ownerUid', 'id', 'title', 'typeId', 'typeName', 'isCustom',
+          'widthMm', 'heightMm', 'orientation', 'sidesCount', 'frontLabel', 'backLabel',
+          'radiusMm', 'frontTransform', 'backTransform', 'notes',
+          'isFavorite', 'isArchived', 'isDeleted', 'isEncrypted', 'coverFace',
+          'hasFrontImage', 'hasBackImage', 'hasOriginalFrontImage', 'hasOriginalBackImage',
+          'clientCreatedAt', 'clientUpdatedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid', 'id', 'title', 'typeId', 'typeName', 'isCustom',
+          'widthMm', 'heightMm', 'orientation', 'sidesCount', 'frontLabel', 'backLabel',
+          'radiusMm', 'previewBgColor', 'frontTransform', 'backTransform', 'notes', 'groupId',
+          'isFavorite', 'isArchived', 'isDeleted', 'deletedAt', 'previousGroupId',
+          'isEncrypted', 'coverFace', 'lastModifiedBy',
+          'hasFrontImage', 'hasBackImage', 'hasOriginalFrontImage', 'hasOriginalBackImage',
+          'clientCreatedAt', 'clientUpdatedAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.id)
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.typeId is string && data.typeId.size() >= 1 && data.typeId.size() <= 80
+        && data.typeName is string && data.typeName.size() >= 1 && data.typeName.size() <= 120
+        && data.isCustom is bool
+        && data.widthMm is number && data.widthMm > 0 && data.widthMm <= 2000
+        && data.heightMm is number && data.heightMm > 0 && data.heightMm <= 2000
+        && (data.orientation == 'landscape' || data.orientation == 'portrait')
+        && (data.sidesCount == 1 || data.sidesCount == 2)
+        && data.frontLabel is string && data.frontLabel.size() <= 120
+        && data.backLabel is string && data.backLabel.size() <= 120
+        && data.radiusMm is number && data.radiusMm >= 0 && data.radiusMm <= 100
+        && (!('previewBgColor' in data) || (data.previewBgColor is string && data.previewBgColor.size() <= 32))
+        && data.frontTransform is map
+        && data.backTransform is map
+        && data.notes is string && data.notes.size() <= 1000
+        && (!('groupId' in data) || isValidId(data.groupId))
+        && data.isFavorite is bool
+        && data.isArchived is bool
+        && data.isDeleted is bool
+        && (!('deletedAt' in data) || (data.deletedAt is string && data.deletedAt.size() <= 64))
+        && (!('previousGroupId' in data) || isValidId(data.previousGroupId))
+        && data.isEncrypted is bool
+        && (data.coverFace == 'front' || data.coverFace == 'back')
+        && (!('lastModifiedBy' in data) || (data.lastModifiedBy is string && data.lastModifiedBy.size() <= 128))
+        && data.hasFrontImage is bool
+        && data.hasBackImage is bool
+        && data.hasOriginalFrontImage is bool
+        && data.hasOriginalBackImage is bool
+        && data.clientCreatedAt is string && data.clientCreatedAt.size() <= 64
+        && data.clientUpdatedAt is string && data.clientUpdatedAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAssetChunk(data) {
+      return data.keys().hasAll(['ownerUid', 'docId', 'slot', 'index', 'total', 'data', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'docId', 'slot', 'index', 'total', 'data', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.docId)
+        && (data.slot == 'front' || data.slot == 'back' || data.slot == 'originalFront' || data.slot == 'originalBack')
+        && data.index is number && data.index >= 0 && data.index < 50
+        && data.total is number && data.total >= 1 && data.total <= 50
+        && data.data is string && data.data.size() <= 600000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCloudBackup(data) {
+      return data.keys().hasAll(['ownerUid', 'id', 'name', 'sizeBytes', 'documentsCount', 'groupsCount', 'chunkCount', 'clientCreatedAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'id', 'name', 'sizeBytes', 'documentsCount', 'groupsCount', 'chunkCount', 'clientCreatedAt', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 160
+        && data.sizeBytes is number && data.sizeBytes >= 0
+        && data.documentsCount is number && data.documentsCount >= 0
+        && data.groupsCount is number && data.groupsCount >= 0
+        && data.chunkCount is number && data.chunkCount >= 1 && data.chunkCount <= 100
+        && data.clientCreatedAt is string && data.clientCreatedAt.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBackupChunk(data) {
+      return data.keys().hasAll(['ownerUid', 'backupId', 'index', 'total', 'data', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'backupId', 'index', 'total', 'data', 'createdAt', 'updatedAt'])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && isValidId(data.backupId)
+        && data.index is number && data.index >= 0 && data.index < 100
+        && data.total is number && data.total >= 1 && data.total <= 100
+        && data.data is string && data.data.size() <= 600000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // === Collection Rules ===
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'email', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['requireEmailOnNewIp', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      match /trustedIps/{ipHash} {
+        allow get: if isOwner(userId) && isValidId(ipHash);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(ipHash)
+          && isValidTrustedIp(incoming())
+          && incoming().ownerUid == userId
+          && incoming().ipHash == ipHash
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isOwner(userId)
+          && isValidId(ipHash)
+          && isValidTrustedIp(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().ipHash == existing().ipHash
+          && incoming().ipLabel == existing().ipLabel
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['deviceId', 'deviceName', 'userAgent', 'verifiedEmail', 'trusted', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['trusted', 'updatedAt'])
+          );
+        allow delete: if isOwner(userId) && isValidId(ipHash);
+      }
+
+      match /devices/{deviceId} {
+        allow get: if isOwner(userId) && isValidId(deviceId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(deviceId)
+          && isValidUserDevice(incoming())
+          && incoming().ownerUid == userId
+          && incoming().id == deviceId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isOwner(userId)
+          && isValidId(deviceId)
+          && isValidUserDevice(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().id == existing().id
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'platform', 'lastIpLabel', 'lastIpHash', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(deviceId);
+      }
+
+      match /groups/{groupId} {
+        allow get: if isOwner(userId) && isValidId(groupId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(groupId)
+          && isValidDocumentGroup(incoming())
+          && incoming().ownerUid == userId
+          && incoming().id == groupId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isOwner(userId)
+          && isValidId(groupId)
+          && isValidDocumentGroup(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().id == existing().id
+          && incoming().clientCreatedAt == existing().clientCreatedAt
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['name', 'color', 'icon', 'description', 'isHidden', 'clientUpdatedAt', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['isLocked', 'passwordHash', 'passwordSalt', 'clientUpdatedAt', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['name', 'color', 'icon', 'description', 'isLocked', 'passwordHash', 'passwordSalt', 'isHidden', 'clientUpdatedAt', 'updatedAt'])
+          );
+        allow delete: if isOwner(userId) && isValidId(groupId);
+      }
+
+      match /documents/{docId} {
+        allow get: if isOwner(userId) && isValidId(docId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(docId)
+          && isValidVaultDocument(incoming())
+          && incoming().ownerUid == userId
+          && incoming().id == docId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isOwner(userId)
+          && isValidId(docId)
+          && isValidVaultDocument(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().id == existing().id
+          && incoming().clientCreatedAt == existing().clientCreatedAt
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['isFavorite', 'isArchived', 'isDeleted', 'deletedAt', 'previousGroupId', 'coverFace', 'lastModifiedBy', 'clientUpdatedAt', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['title', 'typeId', 'typeName', 'isCustom', 'widthMm', 'heightMm', 'orientation', 'sidesCount', 'frontLabel', 'backLabel', 'radiusMm', 'previewBgColor', 'frontTransform', 'backTransform', 'notes', 'groupId', 'isFavorite', 'isArchived', 'isDeleted', 'deletedAt', 'previousGroupId', 'isEncrypted', 'coverFace', 'lastModifiedBy', 'hasFrontImage', 'hasBackImage', 'hasOriginalFrontImage', 'hasOriginalBackImage', 'clientUpdatedAt', 'updatedAt'])
+          );
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+
+      match /assetChunks/{chunkId} {
+        allow get: if isOwner(userId) && isValidId(chunkId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(chunkId)
+          && isValidAssetChunk(incoming())
+          && incoming().ownerUid == userId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId)/documents/$(incoming().docId));
+        allow update: if isOwner(userId)
+          && isValidId(chunkId)
+          && isValidAssetChunk(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().docId == existing().docId
+          && incoming().slot == existing().slot
+          && incoming().index == existing().index
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['total', 'data', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(chunkId);
+      }
+
+      match /backups/{backupId} {
+        allow get: if isOwner(userId) && isValidId(backupId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(backupId)
+          && isValidCloudBackup(incoming())
+          && incoming().ownerUid == userId
+          && incoming().id == backupId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isOwner(userId)
+          && isValidId(backupId)
+          && isValidCloudBackup(incoming())
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().id == existing().id
+          && incoming().clientCreatedAt == existing().clientCreatedAt
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'sizeBytes', 'documentsCount', 'groupsCount', 'chunkCount', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(backupId);
+      }
+
+      match /backupChunks/{chunkId} {
+        allow get: if isOwner(userId) && isValidId(chunkId);
+        allow list: if isOwner(userId) && resource.data.ownerUid == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(chunkId)
+          && isValidBackupChunk(incoming())
+          && incoming().ownerUid == userId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/users/$(userId)/backups/$(incoming().backupId));
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(chunkId);
+      }
+    }
+  }
+}
